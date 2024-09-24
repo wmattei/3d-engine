@@ -215,8 +215,26 @@ type GlfwWindow struct {
 	lastCursorKey Cursor
 }
 
+type GlfwOptions struct {
+	Headless bool
+}
+
+// OptionFunc is a type for functions that configure the ConfigurableService.
+type OptionFunc func(*GlfwOptions)
+
+func WithOptions(opts GlfwOptions) OptionFunc {
+	return func(o *GlfwOptions) {
+		*o = opts
+	}
+}
+
 // Init initializes the GlfwWindow singleton with the specified width, height, and title.
-func Init(width, height int, title string) error {
+func Init(width, height int, title string, options ...OptionFunc) error {
+
+	opts := &GlfwOptions{}
+	for _, option := range options {
+		option(opts)
+	}
 
 	// Panic if already created
 	if win != nil {
@@ -243,6 +261,11 @@ func Init(width, height int, title string) error {
 	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.Samples, 8)
+
+	if opts.Headless {
+		glfw.WindowHint(glfw.Visible, glfw.False)
+	}
+
 	// Set OpenGL forward compatible context only for OSX because it is required for OSX.
 	// When this is set, glLineWidth(width) only accepts width=1.0 and generates an error
 	// for any other values although the spec says it should ignore unsupported widths
