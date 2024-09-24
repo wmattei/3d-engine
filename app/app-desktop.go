@@ -28,8 +28,25 @@ type Application struct {
 	frameDelta     time.Duration      // Duration of last frame
 }
 
+type AppOptions struct {
+	Headless bool
+}
+
+// OptionFunc is a type for functions that configure the ConfigurableService.
+type OptionFunc func(*AppOptions)
+
+func WithOptions(opts AppOptions) OptionFunc {
+	return func(o *AppOptions) {
+		*o = opts
+	}
+}
+
 // App returns the Application singleton, creating it the first time.
-func App(width, height int, title string) *Application {
+func App(width, height int, title string, options ...OptionFunc) *Application {
+	opts := &AppOptions{}
+	for _, option := range options {
+		option(opts)
+	}
 
 	// Return singleton if already created
 	if a != nil {
@@ -37,7 +54,9 @@ func App(width, height int, title string) *Application {
 	}
 	a = new(Application)
 	// Initialize window
-	err := window.Init(width, height, title)
+	err := window.Init(width, height, title, window.WithOptions(window.GlfwOptions{
+		Headless: opts.Headless,
+	}))
 	if err != nil {
 		panic(err)
 	}
